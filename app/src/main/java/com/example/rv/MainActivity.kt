@@ -60,7 +60,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun Menu(modifier: Modifier, onClick: (String) -> Unit) {
     var currentIndex by remember {
-        mutableStateOf(0)
+        mutableIntStateOf(0)
     }
 
     val itemsList = listOf(
@@ -110,7 +110,7 @@ fun CircularImage(
 
 @Composable
 fun ARScreen(model: String) {
-    val nodes = remember {
+    val nodeList = remember {
         mutableListOf<ArNode>()
     }
 
@@ -125,7 +125,7 @@ fun ARScreen(model: String) {
     Box(modifier = Modifier.fillMaxSize()) {
         ARScene(
             modifier = Modifier.fillMaxSize(),
-            nodes = nodes,
+            nodes = nodeList,
             planeRenderer = true,
             onCreate = { arSceneView ->
                 arSceneView.lightEstimationMode = Config.LightEstimationMode.DISABLED
@@ -133,6 +133,7 @@ fun ARScreen(model: String) {
                 modelNode.value = ArModelNode(arSceneView.engine, PlacementMode.INSTANT).apply {
                     loadModelGlbAsync(
                         glbFileLocation = "models/${model}.glb",
+                        scaleToUnits = 0.8f
                     ) {
 
                     }
@@ -144,11 +145,9 @@ fun ARScreen(model: String) {
                     onHitResult = { node, hitResult ->
                         placeModelButton.value = node.isTracking
                     }
-
-                    nodes.add(modelNode.value!!)
                 }
+                nodeList.add(modelNode.value!!)
             },
-
             onSessionCreate = {
                 planeRenderer.isVisible = false
             }
@@ -166,7 +165,7 @@ fun ARScreen(model: String) {
 
     LaunchedEffect(key1 = model) {
         modelNode.value?.loadModelGlbAsync(
-            glbFileLocation = "assets/models/${model}.glb",
+            glbFileLocation = "models/${model}.glb",
             scaleToUnits = 0.8f
         )
 
