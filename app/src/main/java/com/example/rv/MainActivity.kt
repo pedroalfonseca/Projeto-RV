@@ -64,11 +64,8 @@ fun Menu(modifier: Modifier, onClick: (String) -> Unit) {
     }
 
     val itemsList = listOf(
-        Food("burger", R.drawable.burger),
-        Food("instant", R.drawable.instant),
-        Food("momos", R.drawable.momos),
-        Food("pizza", R.drawable.pizza),
-        Food("ramen", R.drawable.ramen),
+        Food("sucrose", R.drawable.sucrose),
+        Food("etanol", R.drawable.etanol),
     )
 
     fun updateIndex(offset: Int) {
