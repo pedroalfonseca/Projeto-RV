@@ -69,4 +69,5 @@ dependencies {
     // ARSceneview
     //implementation("io.github.sceneview:arsceneview:2.0.3")
     implementation("io.github.sceneview:arsceneview:0.10.0")
+    implementation("androidx.navigation:navigation-compose:2.7.7")
 }
