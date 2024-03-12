@@ -20,6 +20,11 @@ import org.tensorflow.lite.support.common.FileUtil
 import org.tensorflow.lite.support.image.ImageProcessor
 import org.tensorflow.lite.support.image.TensorImage
 import org.tensorflow.lite.support.image.ops.ResizeOp
+import org.tensorflow.lite.support.image.ops.Rot90Op
+import android.view.MotionEvent
+import android.view.View
+import android.widget.Button
+import androidx.core.graphics.drawable.toBitmap
 
 class MainActivity : AppCompatActivity() {
 
@@ -43,64 +48,94 @@ class MainActivity : AppCompatActivity() {
         get_permission()
 
         labels = FileUtil.loadLabels(this, "labels.txt")
-        imageProcessor = ImageProcessor.Builder().add(ResizeOp(300, 300, ResizeOp.ResizeMethod.BILINEAR)).build()
+        imageProcessor = ImageProcessor.Builder().build()
         model = SsdMobilenetV11Metadata1.newInstance(this)
+
+        var isThreadRunning = true
         val handlerThread = HandlerThread("videoThread")
         handlerThread.start()
+
         handler = Handler(handlerThread.looper)
-
         imageView = findViewById(R.id.imageView)
-
         textureView = findViewById(R.id.textureView)
+
         textureView.surfaceTextureListener = object:TextureView.SurfaceTextureListener{
             override fun onSurfaceTextureAvailable(p0: SurfaceTexture, p1: Int, p2: Int) {
                 open_camera()
             }
             override fun onSurfaceTextureSizeChanged(p0: SurfaceTexture, p1: Int, p2: Int) {
             }
-
             override fun onSurfaceTextureDestroyed(p0: SurfaceTexture): Boolean {
                 return false
             }
-
             override fun onSurfaceTextureUpdated(p0: SurfaceTexture) {
-                bitmap = textureView.bitmap!!
-                var image = TensorImage.fromBitmap(bitmap)
-                image = imageProcessor.process(image)
+                if (isThreadRunning) {
+                    bitmap = textureView.bitmap!!
+                    var image = TensorImage.fromBitmap(bitmap)
+                    image = imageProcessor.process(image)
 
-                val outputs = model.process(image)
-                val locations = outputs.locationsAsTensorBuffer.floatArray
-                val classes = outputs.classesAsTensorBuffer.floatArray
-                val scores = outputs.scoresAsTensorBuffer.floatArray
-                val numberOfDetections = outputs.numberOfDetectionsAsTensorBuffer.floatArray
+                    val outputs = model.process(image)
+                    val locations = outputs.locationsAsTensorBuffer.floatArray
+                    val classes = outputs.classesAsTensorBuffer.floatArray
+                    val scores = outputs.scoresAsTensorBuffer.floatArray
+                    val numberOfDetections = outputs.numberOfDetectionsAsTensorBuffer.floatArray
 
-                var mutable = bitmap.copy(Bitmap.Config.ARGB_8888, true)
-                val canvas = Canvas(mutable)
+                    var mutable = bitmap.copy(Bitmap.Config.ARGB_8888, true)
+                    val canvas = Canvas(mutable)
 
-                val h = mutable.height
-                val w = mutable.width
-                paint.textSize = h/15f
-                paint.strokeWidth = h/85f
-                var x = 0
-                scores.forEachIndexed { index, fl ->
-                    x = index
-                    x *= 4
-                    if(fl > 0.5){
-                        paint.setColor(colors.get(index))
-                        paint.style = Paint.Style.STROKE
-                        canvas.drawRect(RectF(locations.get(x+1)*w, locations.get(x)*h, locations.get(x+3)*w, locations.get(x+2)*h), paint)
-                        paint.style = Paint.Style.FILL
-                        canvas.drawText(labels.get(classes.get(index).toInt())+" "+fl.toString(), locations.get(x+1)*w, locations.get(x)*h, paint)
+                    val h = mutable.height
+                    val w = mutable.width
+                    paint.textSize = h / 15f
+                    paint.strokeWidth = h / 85f
+                    var x = 0
+                    scores.forEachIndexed { index, fl ->
+                        x = index
+                        x *= 4
+                        if (fl > 0.5) {
+                            paint.setColor(colors.get(index))
+                            paint.style = Paint.Style.STROKE
+
+                            val rect = RectF(
+                                locations.get(x + 1) * w,
+                                locations.get(x) * h,
+                                locations.get(x + 3) * w,
+                                locations.get(x + 2) * h
+                            )
+                            canvas.drawRect(rect, paint)
+
+                            paint.style = Paint.Style.FILL
+                            canvas.drawText(
+                                labels.get(
+                                    classes.get(index).toInt()
+                                ) + " " + fl.toString(),
+                                locations.get(x + 1) * w,
+                                locations.get(x) * h,
+                                paint
+                            )
+                        }
                     }
+
+                    imageView.setImageBitmap(mutable)
                 }
-
-                imageView.setImageBitmap(mutable)
-
-
             }
         }
 
         cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
+
+        val newAttemptButton = findViewById<Button>(R.id.newAttemptButton)
+        val captureButton = findViewById<Button>(R.id.captureButton)
+
+        captureButton.setOnClickListener {
+            isThreadRunning = false
+            captureButton.visibility = View.GONE
+            newAttemptButton.visibility = View.VISIBLE
+        }
+
+        newAttemptButton.setOnClickListener {
+            isThreadRunning = true
+            newAttemptButton.visibility = View.GONE
+            captureButton.visibility = View.VISIBLE
+        }
 
     }
 
