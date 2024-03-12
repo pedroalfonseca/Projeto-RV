@@ -154,11 +154,10 @@ class MainActivity : AppCompatActivity() {
             if (event.action == MotionEvent.ACTION_DOWN) {
                 val touchX = event.x
                 val touchY = event.y
-                println("$touchX: $touchY")
 
                 for ((rect, label) in rectanglesWithClasses) {
                     if (rect.contains(touchX, touchY)) {
-                        println("Retângulo clicado! Classe: $label")
+                        Toast.makeText(this@MainActivity, "Objeto: $label", Toast.LENGTH_SHORT).show()
                         break
                     }
                 }
