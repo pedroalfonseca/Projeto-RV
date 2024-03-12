@@ -52,6 +52,7 @@ class MainActivity : AppCompatActivity() {
         lateinit var scores: FloatArray
         lateinit var locations: FloatArray
         lateinit var classes: FloatArray
+        var rectanglesWithClasses = mutableListOf<Pair<RectF, String>>()
 
         labels = FileUtil.loadLabels(this, "labels.txt")
         imageProcessor = ImageProcessor.Builder().build()
@@ -96,6 +97,7 @@ class MainActivity : AppCompatActivity() {
                     paint.strokeWidth = h / 85f
 
                     var x = 0
+                    rectanglesWithClasses = mutableListOf<Pair<RectF, String>>()
                     scores.forEachIndexed { index, fl ->
                         x = index
                         x *= 4
@@ -109,6 +111,9 @@ class MainActivity : AppCompatActivity() {
                                 locations.get(x + 3) * w,
                                 locations.get(x + 2) * h
                             )
+                            val label = labels.get(classes.get(index).toInt())
+                            rectanglesWithClasses.add(Pair(rect, label))
+
                             canvas.drawRect(rect, paint)
 
                             paint.style = Paint.Style.FILL
@@ -145,33 +150,21 @@ class MainActivity : AppCompatActivity() {
             captureButton.visibility = View.VISIBLE
         }
 
-        imageView.setOnClickListener {
-            val clickX = it.x
-            val clickY = it.y
+        imageView.setOnTouchListener { _, event ->
+            if (event.action == MotionEvent.ACTION_DOWN) {
+                val touchX = event.x
+                val touchY = event.y
+                println("$touchX: $touchY")
 
-            var x = 0
-
-            scores.forEachIndexed { index, fl ->
-                x = index
-                x *= 4
-
-                if (fl > 0.5) {
-
-                    val rect = RectF(
-                        locations.get(x + 1) * imageView.width,
-                        locations.get(x) * imageView.height,
-                        locations.get(x + 3) * imageView.width,
-                        locations.get(x + 2) * imageView.height
-                    )
-
-                    if (rect.contains(clickX, clickY)) {
-                        return@forEachIndexed
+                for ((rect, label) in rectanglesWithClasses) {
+                    if (rect.contains(touchX, touchY)) {
+                        println("Retângulo clicado! Classe: $label")
+                        break
                     }
                 }
             }
+            true
         }
-
-
     }
 
     override fun onDestroy() {
