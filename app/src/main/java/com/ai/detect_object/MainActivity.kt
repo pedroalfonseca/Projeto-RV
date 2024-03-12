@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
+import android.util.Log
 import android.view.Surface
 import android.view.TextureView
 import android.widget.ImageView
@@ -24,6 +25,7 @@ import org.tensorflow.lite.support.image.ops.Rot90Op
 import android.view.MotionEvent
 import android.view.View
 import android.widget.Button
+import android.widget.Toast
 import androidx.core.graphics.drawable.toBitmap
 
 class MainActivity : AppCompatActivity() {
@@ -46,6 +48,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         get_permission()
+
+        lateinit var scores: FloatArray
+        lateinit var locations: FloatArray
+        lateinit var classes: FloatArray
 
         labels = FileUtil.loadLabels(this, "labels.txt")
         imageProcessor = ImageProcessor.Builder().build()
@@ -70,14 +76,15 @@ class MainActivity : AppCompatActivity() {
             }
             override fun onSurfaceTextureUpdated(p0: SurfaceTexture) {
                 if (isThreadRunning) {
+
                     bitmap = textureView.bitmap!!
                     var image = TensorImage.fromBitmap(bitmap)
                     image = imageProcessor.process(image)
 
                     val outputs = model.process(image)
-                    val locations = outputs.locationsAsTensorBuffer.floatArray
-                    val classes = outputs.classesAsTensorBuffer.floatArray
-                    val scores = outputs.scoresAsTensorBuffer.floatArray
+                    locations = outputs.locationsAsTensorBuffer.floatArray
+                    classes = outputs.classesAsTensorBuffer.floatArray
+                    scores = outputs.scoresAsTensorBuffer.floatArray
                     val numberOfDetections = outputs.numberOfDetectionsAsTensorBuffer.floatArray
 
                     var mutable = bitmap.copy(Bitmap.Config.ARGB_8888, true)
@@ -87,6 +94,7 @@ class MainActivity : AppCompatActivity() {
                     val w = mutable.width
                     paint.textSize = h / 15f
                     paint.strokeWidth = h / 85f
+
                     var x = 0
                     scores.forEachIndexed { index, fl ->
                         x = index
@@ -136,6 +144,33 @@ class MainActivity : AppCompatActivity() {
             newAttemptButton.visibility = View.GONE
             captureButton.visibility = View.VISIBLE
         }
+
+        imageView.setOnClickListener {
+            val clickX = it.x
+            val clickY = it.y
+
+            var x = 0
+
+            scores.forEachIndexed { index, fl ->
+                x = index
+                x *= 4
+
+                if (fl > 0.5) {
+
+                    val rect = RectF(
+                        locations.get(x + 1) * imageView.width,
+                        locations.get(x) * imageView.height,
+                        locations.get(x + 3) * imageView.width,
+                        locations.get(x + 2) * imageView.height
+                    )
+
+                    if (rect.contains(clickX, clickY)) {
+                        return@forEachIndexed
+                    }
+                }
+            }
+        }
+
 
     }
 
