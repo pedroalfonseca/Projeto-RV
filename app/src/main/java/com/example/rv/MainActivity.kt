@@ -5,7 +5,9 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,11 +21,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -55,7 +60,7 @@ class MainActivity : ComponentActivity() {
                         composable("arScreen") {
                             Box(modifier = Modifier.fillMaxSize()) {
                                 val currentModel = remember {
-                                    mutableStateOf("burger")
+                                    mutableStateOf("sucrose")
                                 }
 
                                 ARScreen(currentModel.value)
@@ -112,9 +117,13 @@ fun Menu(modifier: Modifier, onClick: (String) -> Unit) {
         mutableIntStateOf(0)
     }
 
+    var showInfo by remember {
+        mutableStateOf(false)
+    }
+
     val itemsList = listOf(
-        Food("sucrose", R.drawable.sucrose),
-        Food("etanol", R.drawable.etanol),
+        Molecule("sucrose", R.drawable.sucrose, "C12H22O11", 342.3f, "Disaccharide", listOf("Sweetening agent")),
+        Molecule("etanol", R.drawable.etanol, "C2H6O", 46.07f, "Alcohol", listOf("Solvent", "Fuel")),
     )
 
     fun updateIndex(offset: Int) {
@@ -122,19 +131,122 @@ fun Menu(modifier: Modifier, onClick: (String) -> Unit) {
         onClick(itemsList[currentIndex].name)
     }
 
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceAround
-    ) {
-        IconButton(onClick = { updateIndex(-1) }) {
-            Icon(painter = painterResource(id = R.drawable.baseline_arrow_back_ios_24), contentDescription = "previous")
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier = modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceAround
+        ) {
+            IconButton(onClick = { updateIndex(-1) }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.baseline_arrow_back_ios_24),
+                    contentDescription = "previous"
+                )
+            }
+
+            CircularImage(
+                imageId = itemsList[currentIndex].imageId,
+                imageName = itemsList[currentIndex].name,
+                onClick = { showInfo = true }
+            )
+
+            IconButton(onClick = { updateIndex(1) }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.baseline_arrow_forward_ios_24),
+                    contentDescription = "next"
+                )
+            }
         }
 
-        CircularImage(imageId = itemsList[currentIndex].imageId)
+        if (showInfo) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)
+                    .padding(16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    IconButton(onClick = { showInfo = false }) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.baseline_close_24),
+                            contentDescription = "close"
+                        )
+                    }
+                }
 
-        IconButton(onClick = { updateIndex(1) }) {
-            Icon(painter = painterResource(id = R.drawable.baseline_arrow_forward_ios_24), contentDescription = "next")
+                Column {
+                    Text("Name: ${itemsList[currentIndex].name}")
+                    Text("Chemical Formula: ${itemsList[currentIndex].chemicalFormula}")
+                    Text("Molecular Weight: ${itemsList[currentIndex].molecularWeight} g/mol")
+                    Text("Type: ${itemsList[currentIndex].type}")
+                    Text("Uses:")
+                    itemsList[currentIndex].uses.forEach { use ->
+                        Text(" - $use")
+                    }
+
+                    Exercise(molecule = itemsList[currentIndex])
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun Exercise(molecule: Molecule) {
+    val question = "Which of the following is a valid use of the molecule?"
+    val answers = listOf(
+        "Sweetening agent",
+        "Solvent",
+        "Fuel",
+        "Antiseptic",
+        "Detergent"
+    )
+
+    var selectedAnswer by remember { mutableStateOf<String?>(null) }
+    var isCorrect by remember { mutableStateOf<Boolean?>(null) }
+
+    Column(modifier = Modifier.padding(vertical = 16.dp)) {
+        Text(
+            text = question,
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
+        answers.forEach { answer ->
+            Row(
+                modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp)
+                .clickable {
+                    selectedAnswer = answer
+                },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                RadioButton(selected = selectedAnswer == answer, onClick = { selectedAnswer = answer })
+                Text(text = answer, modifier = Modifier.padding(start = 8.dp))
+            }
+        }
+
+        Button(
+            onClick = {
+                isCorrect = selectedAnswer in molecule.uses
+            },
+            modifier = Modifier.align(Alignment.End)
+        ) {
+            Text("Submit")
+        }
+
+        if (selectedAnswer != null && isCorrect != null) {
+            val color = if (isCorrect == true) Color.Green else Color.Red
+            Text(
+                if (isCorrect == true) "Correct!" else "Incorrect :/",
+                fontWeight = FontWeight.Bold,
+                color = color,
+                modifier = Modifier.padding(vertical = 8.dp))
         }
     }
 }
@@ -142,15 +254,23 @@ fun Menu(modifier: Modifier, onClick: (String) -> Unit) {
 @Composable
 fun CircularImage(
     modifier: Modifier = Modifier,
-    imageId: Int
+    imageId: Int,
+    imageName: String,
+    onClick: () -> Unit
 ) {
     Box(
         modifier = modifier
             .size(140.dp)
             .clip(CircleShape)
             .border(width = 3.dp, Translucent, CircleShape)
+            .clickable { onClick() }
     ) {
-        Image(painter = painterResource(id = imageId), contentDescription = null, modifier = Modifier.size(140.dp), contentScale = ContentScale.FillBounds)
+        Image(
+            painter = painterResource(id = imageId),
+            contentDescription = null,
+            modifier = Modifier.size(140.dp),
+            contentScale = ContentScale.FillBounds
+        )
     }
 }
 
@@ -219,4 +339,11 @@ fun ARScreen(model: String) {
     }
 }
 
-data class Food(var name: String, var imageId: Int)
+data class Molecule(
+    var name: String,
+    var imageId: Int,
+    var chemicalFormula: String,
+    var molecularWeight: Float,
+    var type: String,
+    var uses: List<String>,
+)
