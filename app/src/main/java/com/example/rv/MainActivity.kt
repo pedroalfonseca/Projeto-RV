@@ -57,6 +57,9 @@ class MainActivity : ComponentActivity() {
                         composable("homeScreen") {
                             HomeScreen(navController = navController)
                         }
+                        composable("detectionScreen") {
+                            DetectionScreen()
+                        }
                         composable("arScreen") {
                             Box(modifier = Modifier.fillMaxSize()) {
                                 val currentModel = remember {
@@ -102,7 +105,7 @@ fun HomeScreen(navController: NavController) {
             )
             Spacer(modifier = Modifier.height(16.dp))
             Button(
-                onClick = { navController.navigate("arScreen") },
+                onClick = { navController.navigate("detectionScreen") },
                 modifier = Modifier.padding(16.dp)
             ) {
                 Text(text = "Visualizar elementos em RA")
@@ -342,6 +345,11 @@ fun ARScreen(model: String) {
     }
 }
 
+@Composable
+fun DetectionScreen() {
+    //Implementar tela
+
+}
 data class Molecule(
     var name: String,
     var imageId: Int,
