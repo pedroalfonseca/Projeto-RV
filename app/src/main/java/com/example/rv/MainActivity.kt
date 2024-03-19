@@ -87,8 +87,8 @@ fun HomeScreen(navController: NavController) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Image(
-                painter = painterResource(id = R.drawable.etanol),
-                contentDescription = "Etanol",
+                painter = painterResource(id = R.drawable.agua),
+                contentDescription = "Agua",
                 modifier = Modifier
                     .size(200.dp)
                     .clip(RoundedCornerShape(8.dp)),
@@ -122,8 +122,11 @@ fun Menu(modifier: Modifier, onClick: (String) -> Unit) {
     }
 
     val itemsList = listOf(
-        Molecule("sucrose", R.drawable.sucrose, "C12H22O11", 342.3f, "Disaccharide", listOf("Sweetening agent")),
-        Molecule("etanol", R.drawable.etanol, "C2H6O", 46.07f, "Alcohol", listOf("Solvent", "Fuel")),
+        Molecule("glicose", R.drawable.glicose, "C12H22O11", 342.3f, "Disaccharide", listOf("Sweetening agent")),
+        Molecule("acido-sulfurico", R.drawable.acido_sulfurico, "H2SO4", 98.08f, "Acid", listOf("Corrosive")),
+        Molecule("agua", R.drawable.agua, "H2O", 18.01f, "Oxide", listOf("Solvent")),
+        Molecule("benzeno", R.drawable.benzeno, "C6H6", 78.11f, "Hydrocarbon", listOf("Flammable", "Irritant", "Health Hazar", "Fuel")),
+        Molecule("dioxido-carbono", R.drawable.dioxido_carbono, "CO2", 44.00f, "Oxide", listOf("Compressed Gas")),
     )
 
     fun updateIndex(offset: Int) {
